@@ -1,0 +1,75 @@
+const express = require('express');
+const app = express();
+const port = 3000;
+const { MongoClient } = require('mongodb');
+
+const url = 'mongodb://localhost:27017';
+const client = new MongoClient(url);
+
+async function main() {
+  await client.connect();
+  console.log('Connected successfully to MongoDB');
+  const db = client.db('mydatabase');
+  const collection = db.collection('documents');
+
+  app.get('/', async (req, res) => {
+    const docs = await collection.find({}).toArray();
+
+    // Generamos un HTML sencillo con título y tabla
+    let html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Registro de Documentos</title>
+        <style>
+          table { border-collapse: collapse; width: 80%; margin: 20px auto; }
+          th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+          th { background-color: #eee; }
+          h1 { text-align: center; }
+        </style>
+      </head>
+      <body>
+        <h1>Registro de Documentos</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Carrera</th>
+              <th>Edad</th>
+              <th>Año de Inscripción</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    // Insertamos filas en la tabla con los documentos
+    docs.forEach(doc => {
+      html += `
+        <tr>
+          <td>${doc._id}</td>
+          <td>${doc.name}</td>
+          <td>${doc.career}</td>
+          <td>${doc.age}</td>
+          <td>${doc.enrollmentYear}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    res.send(html);
+  });
+
+  app.listen(port, () => {
+    console.log(`App listening at http://localhost:${port}`);
+  });
+}
+
+main().catch(console.error);
